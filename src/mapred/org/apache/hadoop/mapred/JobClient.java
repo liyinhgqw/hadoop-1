@@ -604,6 +604,8 @@ public class JobClient extends Configured implements MRConstants, Tool  {
     return true;
   }
 
+  public static boolean RJPFixDistCache = false;
+
   // copies a file to the jobtracker filesystem and returns the path where it
   // was copied to
   private Path copyRemoteFiles(FileSystem jtFs, Path parentDir, 
@@ -693,12 +695,20 @@ public class JobClient extends Configured implements MRConstants, Tool  {
     submitJobDir = fs.makeQualified(submitJobDir);
     FsPermission mapredSysPerms = new FsPermission(JobSubmissionFiles.JOB_DIR_PERMISSION);
     FileSystem.mkdirs(fs, submitJobDir, mapredSysPerms);
-    Path filesDir = JobSubmissionFiles.getJobDistCacheFiles(submitJobDir);
-    Path archivesDir = JobSubmissionFiles.getJobDistCacheArchives(submitJobDir);
-    Path libjarsDir = JobSubmissionFiles.getJobDistCacheLibjars(submitJobDir);
+
+    Path filesDir, archivesDir, libjarsDir;
+    if (RJPFixDistCache) {
+      filesDir = new Path("/tmp/files");
+      archivesDir = new Path("/tmp/archives");
+      libjarsDir = new Path("/tmp/jars");
+    } else {
+      filesDir = JobSubmissionFiles.getJobDistCacheFiles(submitJobDir);
+      archivesDir = JobSubmissionFiles.getJobDistCacheArchives(submitJobDir);
+      libjarsDir = JobSubmissionFiles.getJobDistCacheLibjars(submitJobDir);
+    }
+
     // add all the command line files/ jars and archive
     // first copy them to jobtrackers filesystem 
-    
     if (files != null) {
       FileSystem.mkdirs(fs, filesDir, mapredSysPerms);
       String[] fileArr = files.split(",");

@@ -1,0 +1,10 @@
+config.guess
+config.sub
+depcomp
+install-sh
+ltmain.sh
+missing
+configure
+INSTALL
+Makefile.in
+aclocal.m4

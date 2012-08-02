@@ -1416,8 +1416,8 @@ public class TaskTracker implements MRConstants, TaskUmbilicalProtocol,
     originalConf = conf;
     FILE_CACHE_SIZE = conf.getInt("mapred.tasktracker.file.cache.size", 2000);
     int procs = Runtime.getRuntime().availableProcessors();
-    maxMapSlots = procs / 2;
-    maxReduceSlots = procs / 2;
+    maxMapSlots = Math.max(procs / 2, 1);
+    maxReduceSlots = Math.max(procs / 2, 1);
 
     diskHealthCheckInterval = conf.getLong(DISK_HEALTH_CHECK_INTERVAL_PROPERTY,
                                            DEFAULT_DISK_HEALTH_CHECK_INTERVAL);
