@@ -33,14 +33,4 @@
   <value>100000000</value>
 </property>
 
-<property>
-  <name>dfs.client.read.shortcircuit</name>
-  <value>true</value>
-</property>
-
-<property>
-  <name>dfs.client.read.skipchecksum</name>
-  <value>true</value>
-</property>
-
 </configuration>

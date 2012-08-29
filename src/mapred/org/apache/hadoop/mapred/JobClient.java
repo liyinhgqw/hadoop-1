@@ -438,6 +438,12 @@ public class JobClient extends Configured implements MRConstants, Tool  {
     "mapreduce.client.tasklog.timeout";
   private static final int DEFAULT_TASKLOG_TIMEOUT = 60000;
   static int tasklogtimeout;
+  
+
+  public boolean RJPFixDistCache() {
+    return getConf().getBoolean("mapred.job.distcache.reuse_binaries", false);
+  }
+
 
   /**
    * Create a job client.
@@ -604,8 +610,6 @@ public class JobClient extends Configured implements MRConstants, Tool  {
     return true;
   }
 
-  public static boolean RJPFixDistCache = false;
-
   // copies a file to the jobtracker filesystem and returns the path where it
   // was copied to
   private Path copyRemoteFiles(FileSystem jtFs, Path parentDir, 
@@ -697,7 +701,7 @@ public class JobClient extends Configured implements MRConstants, Tool  {
     FileSystem.mkdirs(fs, submitJobDir, mapredSysPerms);
 
     Path filesDir, archivesDir, libjarsDir;
-    if (RJPFixDistCache) {
+    if (RJPFixDistCache()) {
       filesDir = new Path("/tmp/files");
       archivesDir = new Path("/tmp/archives");
       libjarsDir = new Path("/tmp/jars");
