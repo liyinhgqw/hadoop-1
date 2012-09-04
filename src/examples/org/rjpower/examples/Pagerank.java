@@ -1,4 +1,4 @@
-package edu.nyu.cs.examples;
+package org.rjpower.examples;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -199,7 +199,7 @@ public class Pagerank {
           org.apache.hadoop.mapred.SequenceFileInputFormat.class,
           "/pr/graph/*", "/pr/rank/*"));
 
-      // buildGraph(job);
+      buildGraph(job);
 
       JobClient.runJob(job);
       return 0;
