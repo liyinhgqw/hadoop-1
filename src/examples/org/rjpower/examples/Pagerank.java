@@ -21,8 +21,8 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
 public class Pagerank {
-  public static final int NUMSHARDS = 32;
-  public static final int NUMPAGES = 10 * 1000 * 1000;
+  public static final int NUMSHARDS = 250;
+  public static final int NUMPAGES = 100 * 1000 * 1000;
   public static final double PROPAGATION_FACTOR = 0.8;
 
   public static class PRGraphWritable implements Writable {
@@ -117,7 +117,7 @@ public class Pagerank {
 
   public static void buildGraph(JobConf job) throws IOException {
     FileSystem fs = FileSystem.get(job);
-    fs.delete(new Path("/pr/output/"), true);
+    fs.delete(new Path("output/"), true);
 
     SequenceFile.Writer graphWriters[] = new SequenceFile.Writer[NUMSHARDS];
     SequenceFile.Writer rankWriters[] = new SequenceFile.Writer[NUMSHARDS];
@@ -126,12 +126,12 @@ public class Pagerank {
       graphWriters[i] = SequenceFile.createWriter(
           fs,
           job,
-          new Path(String.format("/pr/graph/test-%05d-of-%05d.rec", i,
+          new Path(String.format("graph/test-%05d-of-%05d.rec", i,
               NUMSHARDS)), LongWritable.class, PRGraphWritable.class,
           SequenceFile.CompressionType.BLOCK);
 
       rankWriters[i] = new SequenceFile.Writer(fs, job, new Path(String.format(
-          "/pr/rank/rank-%05d-of-%05d.rec", i, NUMSHARDS)), LongWritable.class,
+          "rank/rank-%05d-of-%05d.rec", i, NUMSHARDS)), LongWritable.class,
           DoubleWritable.class);
     }
 
@@ -184,6 +184,10 @@ public class Pagerank {
     public int run(String[] args) throws Exception {
       JobConf job = new JobConf(Pagerank.class);
 
+      //job.setProfileEnabled(true);
+      //job.setProfileParams("-agentpath:/home/liyinhgqw/workspace/hprof/hprof.so=cpu=samples,heap=none");
+      //job.setProfileTaskRange(true, "0-2");
+
       job.setJarByClass(Pagerank.class);
       job.setMapperClass(PRMap.class);
       job.setReducerClass(PRReduce.class);
@@ -192,14 +196,15 @@ public class Pagerank {
       job.setOutputFormat(org.apache.hadoop.mapred.SequenceFileOutputFormat.class);
       job.setOutputKeyClass(LongWritable.class);
       job.setOutputValueClass(DoubleWritable.class);
+      job.setNumReduceTasks(120);
       // FileInputFormat.setInputPaths(job, new Path(/pr/));
-      FileOutputFormat.setOutputPath(job, new Path("/pr/rank_out/"));
+      FileOutputFormat.setOutputPath(job, new Path("rank_out/"));
 
       job.set("mapred.join.expr", CompositeInputFormat.compose("outer",
           org.apache.hadoop.mapred.SequenceFileInputFormat.class,
-          "/pr/graph/*", "/pr/rank/*"));
+          "graph/*", "rank/*"));
 
-      buildGraph(job);
+      // buildGraph(job);
 
       JobClient.runJob(job);
       return 0;

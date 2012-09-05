@@ -15,7 +15,7 @@
 
 <property>
   <name>dfs.hosts.exclude</name>
-  <value>conf/hdfs-bad</value>
+  <value>conf/hdfs-bad-empty</value>
 </property>
 
 <property>
@@ -31,6 +31,11 @@
 <property>
   <name>dfs.balance.bandwidthPerSec</name>
   <value>100000000</value>
+</property>
+
+<property>
+  <name>dfs.datanode.max.xcievers</name>
+  <value>4096</value>
 </property>
 
 </configuration>
