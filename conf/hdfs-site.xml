@@ -38,4 +38,8 @@
   <value>4096</value>
 </property>
 
+<property>
+  <name>dfs.block.local-path-access.user</name>
+  <value>liyinhgqw</value>
+</property>
 </configuration>
