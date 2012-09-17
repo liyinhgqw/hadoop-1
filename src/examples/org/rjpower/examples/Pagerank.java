@@ -10,10 +10,7 @@ import java.util.Random;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapred.*;
 import org.apache.hadoop.mapred.join.CompositeInputFormat;
 import org.apache.hadoop.mapred.join.TupleWritable;
@@ -24,6 +21,16 @@ public class Pagerank {
   public static final int NUMSHARDS = 250;
   public static final int NUMPAGES = 100 * 1000 * 1000;
   public static final double PROPAGATION_FACTOR = 0.8;
+  public static class Compare extends WritableComparator {
+    public Compare() {
+      super(LongWritable.class);
+    }
+
+    public int compare(byte[] b1, int s1, int l1,
+                       byte[] b2, int s2, int l2) {
+      return WritableComparator.compareBytes(b1, s1, l1, b2, s2, l2);
+    }
+  }
 
   public static class PRGraphWritable implements Writable {
     public int numTargets;
@@ -68,6 +75,9 @@ public class Pagerank {
       implements
       org.apache.hadoop.mapred.Mapper<LongWritable, TupleWritable, LongWritable, DoubleWritable> {
 
+    LongWritable idOut = new LongWritable();
+    DoubleWritable valueOut = new DoubleWritable();
+
     @Override
     public void map(LongWritable key, TupleWritable value,
         OutputCollector<LongWritable, DoubleWritable> output, Reporter reporter)
@@ -75,9 +85,9 @@ public class Pagerank {
       PRGraphWritable g = (PRGraphWritable) value.get(0);
       double v = ((DoubleWritable) value.get(1)).get();
       for (int i = 0; i < g.numTargets; ++i) {
-        output.collect(new LongWritable(g.targetSites[i] << 32
-            | g.targetPages[i]), new DoubleWritable(PROPAGATION_FACTOR * v
-            / g.numTargets));
+          idOut.set(g.targetSites[i] << 32| g.targetPages[i]);
+          valueOut.set(PROPAGATION_FACTOR * v / g.numTargets);
+        output.collect(idOut, valueOut);
       }
     }
 
@@ -95,15 +105,19 @@ public class Pagerank {
       implements
       org.apache.hadoop.mapred.Reducer<LongWritable, DoubleWritable, LongWritable, DoubleWritable> {
 
+      DoubleWritable rankVal = new DoubleWritable();
+
     @Override
     public void reduce(LongWritable key, Iterator<DoubleWritable> values,
         OutputCollector<LongWritable, DoubleWritable> output, Reporter reporter)
         throws IOException {
       double sum = 0;
+
       while (values.hasNext()) {
         sum += values.next().get();
       }
-      output.collect(key, new DoubleWritable(sum));
+      rankVal.set(sum);
+      output.collect(key, rankVal);
     }
 
     @Override
@@ -137,7 +151,7 @@ public class Pagerank {
 
     ArrayList<Integer> siteSizes = new ArrayList<Integer>();
     int totalSize = 0;
-    Random rand = new Random();
+    Random rand = new Random(0);
     while (totalSize < NUMPAGES) {
       int s = 50 + rand.nextInt(10000);
       siteSizes.add(s);
@@ -175,6 +189,7 @@ public class Pagerank {
     }
 
     for (int i = 0; i < NUMSHARDS; ++i) {
+      rankWriters[i].close();
       graphWriters[i].close();
     }
   }
@@ -184,9 +199,9 @@ public class Pagerank {
     public int run(String[] args) throws Exception {
       JobConf job = new JobConf(Pagerank.class);
 
-      //job.setProfileEnabled(true);
-      //job.setProfileParams("-agentpath:/home/liyinhgqw/workspace/hprof/hprof.so=cpu=samples,heap=none");
-      //job.setProfileTaskRange(true, "0-2");
+      job.setProfileEnabled(true);
+      job.setProfileParams("-agentpath:/home/liyinhgqw/workspace/hprof/hprof.so=cpu=samples,heap=none,depth=32,file=%s");
+      job.setProfileTaskRange(true, "0-2");
 
       job.setJarByClass(Pagerank.class);
       job.setMapperClass(PRMap.class);
@@ -196,15 +211,19 @@ public class Pagerank {
       job.setOutputFormat(org.apache.hadoop.mapred.SequenceFileOutputFormat.class);
       job.setOutputKeyClass(LongWritable.class);
       job.setOutputValueClass(DoubleWritable.class);
-      job.setNumReduceTasks(120);
+      job.setOutputKeyComparatorClass(Compare.class);
+      job.setNumReduceTasks(250);
       // FileInputFormat.setInputPaths(job, new Path(/pr/));
       FileOutputFormat.setOutputPath(job, new Path("rank_out/"));
+      
+      //buildGraph(job);
+      //buildRanks(job);
+      FileSystem fs = FileSystem.get(job);
+      fs.delete(new Path("rank_out/"), true);
 
       job.set("mapred.join.expr", CompositeInputFormat.compose("outer",
           org.apache.hadoop.mapred.SequenceFileInputFormat.class,
           "graph/*", "rank/*"));
-
-      // buildGraph(job);
 
       JobClient.runJob(job);
       return 0;
@@ -213,6 +232,5 @@ public class Pagerank {
 
   public static void main(String[] args) throws Exception {
     ToolRunner.run(new PRTool(), null);
-    ;
   }
 }

@@ -45,7 +45,7 @@
 
 <property>
   <name>mapred.hosts.exclude</name>
-  <value>conf/mapred-bad</value>
+  <value>conf/mapred-bad-empty</value>
 </property>
 
 <property>
@@ -78,5 +78,23 @@
   <value>10000</value>
 </property>
 
+<property>
+  <name>io.sort.mb</name>
+  <value>100</value>
+</property>
 
+<property>
+  <name>io.sort.factor</name>
+  <value>30</value>
+</property>
+
+<property>
+  <name>io.sort.record.percent</name>
+  <value>0.5</value>
+</property>
+
+<property>
+  <name>io.sort.spill.percent</name>
+  <value>0.8</value>
+</property>
 </configuration>

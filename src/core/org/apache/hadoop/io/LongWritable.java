@@ -21,7 +21,7 @@ package org.apache.hadoop.io;
 import java.io.*;
 
 /** A WritableComparable for longs. */
-public class LongWritable implements WritableComparable {
+public class LongWritable implements WritableComparable, Copyable {
   private long value;
 
   public LongWritable() {}
@@ -41,7 +41,7 @@ public class LongWritable implements WritableComparable {
   public void write(DataOutput out) throws IOException {
     out.writeLong(value);
   }
-
+		  
   /** Returns true iff <code>o</code> is a LongWritable with the same value. */
   public boolean equals(Object o) {
     if (!(o instanceof LongWritable))
@@ -91,6 +91,12 @@ public class LongWritable implements WritableComparable {
 
   static {                                       // register default comparator
     WritableComparator.define(LongWritable.class, new Comparator());
+  }
+
+  @Override
+  public void copyField(Copyable dst) throws IOException {
+	LongWritable that = (LongWritable) dst;
+	that.value = this.value;
   }
 
 }

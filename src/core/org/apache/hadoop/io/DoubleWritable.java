@@ -25,7 +25,7 @@ import java.io.IOException;
 /**
  * Writable for Double values.
  */
-public class DoubleWritable implements WritableComparable {
+public class DoubleWritable implements WritableComparable, Copyable {
 
   private double value = 0.0;
   
@@ -43,6 +43,12 @@ public class DoubleWritable implements WritableComparable {
 
   public void write(DataOutput out) throws IOException {
     out.writeDouble(value);
+  }
+  
+  @Override
+  public void copyField(Copyable dst) throws IOException {
+	DoubleWritable that = (DoubleWritable) dst;
+	that.value = this.value;
   }
   
   public void set(double value) { this.value = value; }

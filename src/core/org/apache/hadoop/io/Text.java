@@ -45,7 +45,7 @@ import org.apache.commons.logging.LogFactory;
  * string.
  */
 public class Text extends BinaryComparable
-    implements WritableComparable<BinaryComparable> {
+    implements WritableComparable<BinaryComparable>, Copyable {
   private static final Log LOG= LogFactory.getLog(Text.class);
   
   private static ThreadLocal<CharsetEncoder> ENCODER_FACTORY =
@@ -264,6 +264,12 @@ public class Text extends BinaryComparable
     setCapacity(newLength, false);
     in.readFully(bytes, 0, newLength);
     length = newLength;
+  }
+  
+  @Override
+  public void copyField(Copyable dst) throws IOException {
+	Text that = (Text) dst;
+	that.set(this);
   }
 
   /** Skips over one Text in the input. */

@@ -27,7 +27,7 @@ import java.security.*;
 
 /** A Writable for MD5 hash values.
  */
-public class MD5Hash implements WritableComparable<MD5Hash> {
+public class MD5Hash implements WritableComparable<MD5Hash>, Copyable {
   public static final int MD5_LEN = 16;
 
   private static ThreadLocal<MessageDigest> DIGESTER_FACTORY = new ThreadLocal<MessageDigest>() {
@@ -74,6 +74,15 @@ public class MD5Hash implements WritableComparable<MD5Hash> {
   // javadoc from Writable
   public void write(DataOutput out) throws IOException {
     out.write(digest);
+  }
+  
+  @Override
+  public void copyField(Copyable dst) throws IOException {
+	MD5Hash that = (MD5Hash) dst;
+	that.digest = new byte[this.digest.length];
+	for (int i = 0; i < digest.length; i++) {
+		that.digest[i] = this.digest[i];
+	}
   }
 
   /** Copy the contents of another instance into this instance. */

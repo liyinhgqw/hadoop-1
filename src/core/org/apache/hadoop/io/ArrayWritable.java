@@ -36,7 +36,7 @@ import java.lang.reflect.Array;
  * }
  * </code>
  */
-public class ArrayWritable implements Writable {
+public class ArrayWritable implements Writable, Copyable {
   private Class<? extends Writable> valueClass;
   private Writable[] values;
 
@@ -99,5 +99,28 @@ public class ArrayWritable implements Writable {
     }
   }
 
+  @Override
+  public void copyField(Copyable dst) throws IOException {
+	ArrayWritable that = (ArrayWritable) dst;
+	that.values = new Writable[values.length];
+	Boolean found = false;
+	for (Class<?> clazz: this.valueClass.getInterfaces()) {
+		if (clazz.equals(Copyable.class)) {
+			found = true;
+			break;
+		}
+	}
+	
+	if (found) {
+	  for (int i = 0; i < values.length; i++) {
+        Writable value = WritableFactories.newInstance(valueClass);
+        ((Copyable) this.values[i]).copyField((Copyable) value);
+        that.values[i] = value;
+      }
+	} else {
+		IOException e;
+		throw new IOException("Not Copyable");
+	}
+  }
 }
 

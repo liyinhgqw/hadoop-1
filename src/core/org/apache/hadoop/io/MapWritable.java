@@ -33,7 +33,7 @@ import org.apache.hadoop.util.ReflectionUtils;
  * A Writable Map.
  */
 public class MapWritable extends AbstractMapWritable
-  implements Map<Writable, Writable> {
+  implements Map<Writable, Writable>, Copyable {
 
   private Map<Writable, Writable> instance;
   
@@ -166,6 +166,29 @@ public class MapWritable extends AbstractMapWritable
       
       value.readFields(in);
       instance.put(key, value);
+    }
+  }
+  
+  @Override
+  public void copyField(Copyable dst) throws IOException {
+	MapWritable that = (MapWritable) dst;
+    super.copyField(dst);
+    
+    that.instance.clear();
+    int entries = this.instance.size();
+
+    try {
+    for (Map.Entry<Writable, Writable> e: instance.entrySet()) {
+      Writable key = (Writable) ReflectionUtils.newInstance(
+    		  e.getKey().getClass(), getConf());    	
+      ((Copyable) e.getKey()).copyField((Copyable) key);
+      Writable value = (Writable) ReflectionUtils.newInstance(
+    		  e.getValue().getClass(), getConf());    	
+      ((Copyable) e.getValue()).copyField((Copyable) value);
+      that.instance.put(key, value);
+    }
+    } catch (Exception e) {
+    	throw new IOException("Not Copyable");
     }
   }
 }

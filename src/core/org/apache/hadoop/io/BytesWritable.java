@@ -32,7 +32,7 @@ import org.apache.commons.logging.LogFactory;
  * buffer. The sort order is the same as memcmp.
  */
 public class BytesWritable extends BinaryComparable
-    implements WritableComparable<BinaryComparable> {
+    implements WritableComparable<BinaryComparable>, Copyable {
   private static final Log LOG = LogFactory.getLog(BytesWritable.class);
   private static final int LENGTH_BYTES = 4;
   private static final byte[] EMPTY_BYTES = {};
@@ -158,6 +158,12 @@ public class BytesWritable extends BinaryComparable
   public void write(DataOutput out) throws IOException {
     out.writeInt(size);
     out.write(bytes, 0, size);
+  }
+  
+  @Override
+  public void copyField(Copyable dst) throws IOException {
+	BytesWritable that = (BytesWritable) dst;
+	that.set(this);
   }
   
   public int hashCode() {

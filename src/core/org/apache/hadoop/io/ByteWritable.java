@@ -21,7 +21,7 @@ package org.apache.hadoop.io;
 import java.io.*;
 
 /** A WritableComparable for a single byte. */
-public class ByteWritable implements WritableComparable {
+public class ByteWritable implements WritableComparable, Copyable {
   private byte value;
 
   public ByteWritable() {}
@@ -40,6 +40,12 @@ public class ByteWritable implements WritableComparable {
 
   public void write(DataOutput out) throws IOException {
     out.writeByte(value);
+  }
+  
+  @Override
+  public void copyField(Copyable dst) throws IOException {
+	ByteWritable that = (ByteWritable) dst;
+	that.value = this.value;
   }
 
   /** Returns true iff <code>o</code> is a ByteWritable with the same value. */

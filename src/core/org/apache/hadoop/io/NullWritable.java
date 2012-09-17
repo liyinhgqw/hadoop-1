@@ -21,7 +21,7 @@ package org.apache.hadoop.io;
 import java.io.*;
 
 /** Singleton Writable with no data. */
-public class NullWritable implements WritableComparable {
+public class NullWritable implements WritableComparable, Copyable {
 
   private static final NullWritable THIS = new NullWritable();
 
@@ -45,7 +45,9 @@ public class NullWritable implements WritableComparable {
   public boolean equals(Object other) { return other instanceof NullWritable; }
   public void readFields(DataInput in) throws IOException {}
   public void write(DataOutput out) throws IOException {}
-
+  @Override
+  public void copyField(Copyable dst) throws IOException {}
+  
   /** A Comparator &quot;optimized&quot; for NullWritable. */
   public static class Comparator extends WritableComparator {
     public Comparator() {

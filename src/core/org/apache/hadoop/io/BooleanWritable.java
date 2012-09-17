@@ -23,7 +23,7 @@ import java.io.*;
 /** 
  * A WritableComparable for booleans. 
  */
-public class BooleanWritable implements WritableComparable {
+public class BooleanWritable implements WritableComparable, Copyable {
   private boolean value;
 
   /** 
@@ -60,6 +60,12 @@ public class BooleanWritable implements WritableComparable {
    */
   public void write(DataOutput out) throws IOException {
     out.writeBoolean(value);
+  }
+  
+  @Override
+  public void copyField(Copyable dst) throws IOException {
+	BooleanWritable that = (BooleanWritable) dst;
+	that.value = this.value;
   }
 
   /**
@@ -106,6 +112,7 @@ public class BooleanWritable implements WritableComparable {
     }
   }
 
+  
 
   static {
     WritableComparator.define(BooleanWritable.class, new Comparator());

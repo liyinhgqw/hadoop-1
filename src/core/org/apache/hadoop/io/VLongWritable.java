@@ -25,7 +25,7 @@ import java.io.*;
  *  
  *  @see org.apache.hadoop.io.WritableUtils#readVLong(DataInput)
  */
-public class VLongWritable implements WritableComparable {
+public class VLongWritable implements WritableComparable, Copyable {
   private long value;
 
   public VLongWritable() {}
@@ -44,6 +44,12 @@ public class VLongWritable implements WritableComparable {
 
   public void write(DataOutput out) throws IOException {
     WritableUtils.writeVLong(out, value);
+  }
+  
+  @Override
+  public void copyField(Copyable dst) throws IOException {
+	VLongWritable that = (VLongWritable) dst;
+	that.value = this.value;
   }
 
   /** Returns true iff <code>o</code> is a VLongWritable with the same value. */

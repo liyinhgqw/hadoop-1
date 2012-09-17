@@ -31,7 +31,7 @@ import org.apache.commons.logging.*;
  *
  * @deprecated replaced by Text
  */
-public class UTF8 implements WritableComparable {
+public class UTF8 implements WritableComparable, Copyable {
   private static final Log LOG= LogFactory.getLog(UTF8.class);
   private static final DataInputBuffer IBUF = new DataInputBuffer();
 
@@ -112,6 +112,12 @@ public class UTF8 implements WritableComparable {
     in.readFully(bytes, 0, length);
   }
 
+  @Override
+  public void copyField(Copyable dst) throws IOException {
+	UTF8 that = (UTF8) dst;
+	that.set(this);
+  }
+  
   /** Skips over one UTF8 in the input. */
   public static void skip(DataInput in) throws IOException {
     int length = in.readUnsignedShort();

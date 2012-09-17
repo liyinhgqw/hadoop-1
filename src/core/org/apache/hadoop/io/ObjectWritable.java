@@ -28,7 +28,7 @@ import org.apache.hadoop.conf.*;
 /** A polymorphic Writable that writes an instance with it's class name.
  * Handles arrays, strings and primitive types without a Writable wrapper.
  */
-public class ObjectWritable implements Writable, Configurable {
+public class ObjectWritable implements Writable, Configurable, Copyable {
 
   private Class declaredClass;
   private Object instance;
@@ -68,6 +68,14 @@ public class ObjectWritable implements Writable, Configurable {
   
   public void write(DataOutput out) throws IOException {
     writeObject(out, instance, declaredClass, conf);
+  }
+  
+  @Override
+  public void copyField(Copyable dst) throws IOException {
+	ObjectWritable that = (ObjectWritable) dst;
+	that.declaredClass = this.declaredClass;
+	that.instance = this.instance;
+	that.conf = this.conf;
   }
 
   private static final Map<String, Class<?>> PRIMITIVE_NAMES = new HashMap<String, Class<?>>();

@@ -39,7 +39,7 @@ import org.apache.hadoop.conf.Configuration;
  * Class ids range from 1 to 127 so there can be at most 127 distinct classes
  * in any specific map instance.
  */
-public abstract class AbstractMapWritable implements Writable, Configurable {
+public abstract class AbstractMapWritable implements Writable, Configurable, Copyable {
   private AtomicReference<Configuration> conf;
   
   /* Class to id mappings */
@@ -205,5 +205,22 @@ public abstract class AbstractMapWritable implements Writable, Configurable {
             e.getMessage());
       }
     }
-  }    
+  }
+  
+  @Override
+  public void copyField(Copyable dst) throws IOException {
+	AbstractMapWritable that = (AbstractMapWritable) dst;
+	that.newClasses = this.newClasses;
+	for (byte i = 1; i <= newClasses; i++) {
+		byte id = i;
+		String className = getClass(i).getName();
+	    try {
+	      that.addToMap(Class.forName(className), id);
+	      
+	    } catch (ClassNotFoundException e) {
+	      throw new IOException("can't find class: " + className + " because "+
+	          e.getMessage());
+	    }
+	}
+  }
 }

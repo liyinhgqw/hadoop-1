@@ -22,7 +22,7 @@ import java.io.*;
 import java.lang.reflect.Array;
 
 /** A Writable for 2D arrays containing a matrix of instances of a class. */
-public class TwoDArrayWritable implements Writable {
+public class TwoDArrayWritable implements Writable, Copyable {
   private Class valueClass;
   private Writable[][] values;
 
@@ -86,6 +86,42 @@ public class TwoDArrayWritable implements Writable {
         values[i][j].write(out);
       }
     }
+  }
+  
+  @Override
+  public void copyField(Copyable dst) throws IOException {
+	TwoDArrayWritable that = (TwoDArrayWritable) dst;
+    for (int i = 0; i < values.length; i++) {
+      that.values[i] = new Writable[values[i].length];
+    }
+	
+    Boolean found = false;
+	for (Class<?> clazz: this.valueClass.getInterfaces()) {
+		if (clazz.equals(Copyable.class)) {
+			found = true;
+			break;
+		}
+	}
+	
+	if (found) {
+	    for (int i = 0; i < values.length; i++) {
+	        for (int j = 0; j < values[i].length; j++) {
+	          Writable value;                             // construct value
+	          try {
+	            value = (Writable)valueClass.newInstance();
+	          } catch (InstantiationException e) {
+	            throw new RuntimeException(e.toString());
+	          } catch (IllegalAccessException e) {
+	            throw new RuntimeException(e.toString());
+	          }
+	          ((Copyable) this.values[i][j]).copyField((Copyable) value);
+	          that.values[i][j] = value;
+	        }
+	      }
+    } else {
+		IOException e;
+		throw new IOException("Not Copyable");
+	}
   }
 }
 

@@ -25,7 +25,7 @@ import java.io.*;
  * 
  * @see org.apache.hadoop.io.WritableUtils#readVInt(DataInput)
  */
-public class VIntWritable implements WritableComparable {
+public class VIntWritable implements WritableComparable, Copyable {
   private int value;
 
   public VIntWritable() {}
@@ -44,6 +44,12 @@ public class VIntWritable implements WritableComparable {
 
   public void write(DataOutput out) throws IOException {
     WritableUtils.writeVInt(out, value);
+  }
+  
+  @Override
+  public void copyField(Copyable dst) throws IOException {
+	VIntWritable that = (VIntWritable) dst;
+	that.value = this.value;
   }
 
   /** Returns true iff <code>o</code> is a VIntWritable with the same value. */

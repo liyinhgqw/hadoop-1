@@ -34,7 +34,7 @@ import java.util.zip.InflaterInputStream;
  * not be altered during a map or reduce operation: leaving the field data
  * compressed makes copying the instance from one file to another much
  * faster. */
-public abstract class CompressedWritable implements Writable {
+public abstract class CompressedWritable implements Writable, Copyable {
   // if non-null, the compressed field data of this instance.
   private byte[] compressed;
 
@@ -43,6 +43,15 @@ public abstract class CompressedWritable implements Writable {
   public final void readFields(DataInput in) throws IOException {
     compressed = new byte[in.readInt()];
     in.readFully(compressed, 0, compressed.length);
+  }
+  
+  @Override
+  public void copyField(Copyable dst) throws IOException {
+	CompressedWritable that = (CompressedWritable) dst;
+	that.compressed = new byte[this.compressed.length];
+	for (int i = 0; i < compressed.length; i++) {
+		that.compressed[i] = this.compressed[i];
+	}
   }
 
   /** Must be called by all methods which access fields to ensure that the data

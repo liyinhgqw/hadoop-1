@@ -21,7 +21,7 @@ package org.apache.hadoop.io;
 import java.io.*;
 
 /** A WritableComparable for ints. */
-public class IntWritable implements WritableComparable {
+public class IntWritable implements WritableComparable, Copyable {
   private int value;
 
   public IntWritable() {}
@@ -40,6 +40,12 @@ public class IntWritable implements WritableComparable {
 
   public void write(DataOutput out) throws IOException {
     out.writeInt(value);
+  }
+  
+  @Override
+  public void copyField(Copyable dst) throws IOException {
+	IntWritable that = (IntWritable) dst;
+	that.value = this.value;
   }
 
   /** Returns true iff <code>o</code> is a IntWritable with the same value. */
