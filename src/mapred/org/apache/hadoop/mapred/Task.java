@@ -827,7 +827,7 @@ abstract public class Task implements Writable, Configurable {
       updater.updateCounters();      
     }
     // TODO Should CPU related counters be update only once i.e in the end
-    updateResourceCounters();
+    // updateResourceCounters();
   }
 
   /**
@@ -847,6 +847,7 @@ abstract public class Task implements Writable, Configurable {
     LOG.info("Task:" + taskId + " is done."
              + " And is in the process of commiting");
     updateCounters();
+    updateResourceCounters();
 
     boolean commitRequired = isCommitRequired();
     if (commitRequired) {

@@ -34,6 +34,8 @@ import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -48,12 +50,11 @@ import org.apache.hadoop.fs.FileSystem.Statistics;
 import org.apache.hadoop.fs.LocalDirAllocator;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.hadoop.io.RawComparator;
 import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.SequenceFile.CompressionType;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.DefaultCodec;
 import org.apache.hadoop.io.serializer.Deserializer;
@@ -62,19 +63,17 @@ import org.apache.hadoop.io.serializer.Serializer;
 import org.apache.hadoop.mapred.IFile.Writer;
 import org.apache.hadoop.mapred.Merger.Segment;
 import org.apache.hadoop.mapred.SortedRanges.SkipRangeIterator;
-import org.apache.hadoop.mapred.FileInputFormat;
-import org.apache.hadoop.mapreduce.split.JobSplit;
-import org.apache.hadoop.mapreduce.split.JobSplit.SplitMetaInfo;
-import org.apache.hadoop.mapreduce.split.JobSplit.TaskSplitIndex;
-import org.apache.hadoop.mapreduce.split.JobSplit.TaskSplitMetaInfo;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.mapreduce.split.JobSplit.TaskSplitIndex;
 import org.apache.hadoop.util.IndexedSortable;
 import org.apache.hadoop.util.IndexedSorter;
 import org.apache.hadoop.util.Progress;
 import org.apache.hadoop.util.QuickSort;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hadoop.util.StringUtils;
+
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ListMultimap;
 
 /** A Map task. */
 class MapTask extends Task {
@@ -303,7 +302,7 @@ class MapTask extends Task {
         if(toWriteSkipRecs) {
           writeSkippedRec(key, value);
         }
-      	ret = moveToNext(key, value);
+        ret = moveToNext(key, value);
         skip++;
       }
       //close the skip writer once all the ranges are skipped
@@ -320,7 +319,7 @@ class MapTask extends Task {
     
     protected synchronized boolean moveToNext(K key, V value)
     throws IOException {
-	    recIndex++;
+        recIndex++;
       return super.moveToNext(key, value);
     }
     
@@ -484,7 +483,7 @@ class MapTask extends Task {
             .getPath(), job);
       } 
       fsStats = matchedStats;
-	  
+      
       long bytesInPrev = getInputBytes(fsStats);
       this.real = inputFormat.createRecordReader(split, taskContext);
       long bytesInCurr = getInputBytes(fsStats);
@@ -873,6 +872,7 @@ class MapTask extends Task {
     private int kvindex = 0;           // marks end of collected
     private final int[] kvoffsets;     // indices into kvindices
     private final int[] kvindices;     // partition, k/v offsets into kvbuffer
+    private ListMultimap<Integer, Integer> buckets;  // key: partition #, value: offsets
     private volatile int bufstart = 0; // marks beginning of spill
     private volatile int bufend = 0;   // marks beginning of collectable
     private volatile int bufvoid = 0;  // marks the point where we should stop
@@ -886,6 +886,8 @@ class MapTask extends Task {
     private static final int ACCTSIZE = 3;  // total #fields in acct
     private static final int RECSIZE =
                        (ACCTSIZE + 1) * 4;  // acct bytes per record
+    
+    
 
     // spill accounting
     private volatile int numSpills = 0;
@@ -1396,6 +1398,73 @@ class MapTask extends Task {
         final int endPosition = (kvend > kvstart)
           ? kvend
           : kvoffsets.length + kvend;
+        
+       
+/*   
+        if (combinerRunner == null) {
+          sorter.sort(MapOutputBuffer.this, kvstart, endPosition, reporter);
+        } else {
+          buckets = ArrayListMultimap.create();
+          // copy to buckets
+          LinkedList<Integer> thisList = null;
+          for (int spindex = kvstart; spindex <endPosition; spindex ++) {
+            int thisOff = kvoffsets[spindex % kvoffsets.length];
+            int bucketKey = kvindices[thisOff + PARTITION];
+            buckets.put(bucketKey, thisOff);
+          }
+        }
+        
+        int spindex = kvstart;
+        IndexRecord rec = new IndexRecord();
+        InMemValBytes value = new InMemValBytes();
+        
+        for (int i = 0; i < partitions; ++i) {
+          IFile.Writer<K, V> writer = null;
+          try {
+            long segmentStart = out.getPos();
+            writer = new Writer<K, V>(job, out, keyClass, valClass, codec,
+                                      spilledRecordsCounter);
+            if (combinerRunner == null) {
+              // spill directly
+              DataInputBuffer key = new DataInputBuffer();
+              while (spindex < endPosition &&
+                  kvindices[kvoffsets[spindex % kvoffsets.length]
+                            + PARTITION] == i) {
+                final int kvoff = kvoffsets[spindex % kvoffsets.length];
+                getVBytesForOffset(kvoff, value);
+                key.reset(kvbuffer, kvindices[kvoff + KEYSTART],
+                          (kvindices[kvoff + VALSTART] - 
+                           kvindices[kvoff + KEYSTART]));
+                writer.append(key, value);
+                ++spindex;
+              }
+            } else {
+              if (buckets.containsKey(i) 
+                  && !buckets.get(i).isEmpty()) {
+                combineCollector.setWriter(writer);
+                RawKeyValueIterator kvIter =
+                  new BucketMRResultIterator(buckets.get(i));
+                combinerRunner.combine(kvIter, combineCollector);
+              }
+            }
+
+            // close the writer
+            writer.close();
+
+            // record offsets
+            rec.startOffset = segmentStart;
+            rec.rawLength = writer.getRawLength();
+            rec.partLength = writer.getCompressedLength();
+            spillRec.putIndex(rec, i);
+
+            writer = null;
+          } finally {
+            if (null != writer) writer.close();
+          }
+        }
+*/ 
+        
+        
         sorter.sort(MapOutputBuffer.this, kvstart, endPosition, reporter);
         int spindex = kvstart;
         IndexRecord rec = new IndexRecord();
@@ -1594,6 +1663,39 @@ class MapTask extends Task {
       }
       public DataInputBuffer getValue() throws IOException {
         getVBytesForOffset(kvoffsets[current % kvoffsets.length], vbytes);
+        return vbytes;
+      }
+      public Progress getProgress() {
+        return null;
+      }
+      public void close() { }
+    }
+    
+    protected class BucketMRResultIterator implements RawKeyValueIterator {
+      private final DataInputBuffer keybuf = new DataInputBuffer();
+      private final InMemValBytes vbytes = new InMemValBytes();
+      private Iterator<Integer> current;
+      private int kvoff;
+      private List<Integer> list = null;
+      
+      public BucketMRResultIterator(List<Integer> bucketList) {
+        list = bucketList;
+        current = list.iterator();
+      }
+      public boolean next() throws IOException {
+        if (current.hasNext()) {
+          kvoff = current.next();
+          return true;
+        } 
+        return false;
+      }
+      public DataInputBuffer getKey() throws IOException {
+        keybuf.reset(kvbuffer, kvindices[kvoff + KEYSTART],
+                     kvindices[kvoff + VALSTART] - kvindices[kvoff + KEYSTART]);
+        return keybuf;
+      }
+      public DataInputBuffer getValue() throws IOException {
+        getVBytesForOffset(kvoff, vbytes);
         return vbytes;
       }
       public Progress getProgress() {

@@ -80,12 +80,17 @@
 
 <property>
   <name>io.sort.mb</name>
-  <value>100</value>
+  <value>128</value>
+</property>
+
+<property>
+  <name>fs.inmemory.size.mb</name>
+  <value>128</value>
 </property>
 
 <property>
   <name>io.sort.factor</name>
-  <value>30</value>
+  <value>50</value>
 </property>
 
 <property>
@@ -97,4 +102,35 @@
   <name>io.sort.spill.percent</name>
   <value>0.8</value>
 </property>
+<!--
+<property>
+  <name>mapred.reduce.parallel.copies</name>
+  <value>200</value>
+</property>
+-->
+<property>
+  <name>mapred.reduce.slowstart.completed.maps</name>
+  <value>0.00</value>
+</property>
+
+<property>
+  <name>mapred.job.shuffle.merge.percent</name>
+  <value>0.88</value>
+</property>
+
+<property>
+  <name>mapred.job.reduce.input.buffer.percent</name>
+  <value>0.99</value>
+</property>
+
+<property>
+  <name>mapred.inmem.merge.threshold</name>
+  <value>1500</value>
+</property>
+
+<property>
+  <name>mapred.min.split.size</name>
+  <value>8388608</value>
+</property>
+
 </configuration>

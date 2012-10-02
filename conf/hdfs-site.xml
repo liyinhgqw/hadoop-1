@@ -42,4 +42,11 @@
   <name>dfs.block.local-path-access.user</name>
   <value>liyinhgqw</value>
 </property>
+
+<!--
+<property>
+  <name>dfs.block.size</name>
+  <value>4194304</value>
+</property>
+-->
 </configuration>

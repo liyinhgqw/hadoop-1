@@ -1983,7 +1983,7 @@ class ReduceTask extends Task {
     
     public boolean fetchOutputs() throws IOException {
       int totalFailures = 0;
-      int            numInFlight = 0, numCopied = 0;
+      int numInFlight = 0, numCopied = 0;
       DecimalFormat  mbpsFormat = new DecimalFormat("0.00");
       final Progress copyPhase = 
         reduceTask.getProgress().phase();

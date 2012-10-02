@@ -70,7 +70,16 @@ public abstract class FileSystem extends Configured implements Closeable {
 
   /** FileSystem cache */
   private static final Cache CACHE = new Cache();
-
+  public static String defaultUri = null;
+  
+  
+  
+  private static Boolean isDisableCacheName = false;
+  private static Boolean checkDisableCacheName = false;
+  
+  
+  
+  
   /** The key this instance is stored under in the cache. */
   private Cache.Key key;
 
@@ -127,8 +136,11 @@ public abstract class FileSystem extends Configured implements Closeable {
    * @param conf the configuration to access
    * @return the uri of the default filesystem
    */
+
   public static URI getDefaultUri(Configuration conf) {
-    return URI.create(fixName(conf.get(FS_DEFAULT_NAME_KEY, "file:///")));
+    if (FileSystem.defaultUri == null) 
+      FileSystem.defaultUri = fixName(conf.get(FS_DEFAULT_NAME_KEY, "file:///"));
+    return URI.create(FileSystem.defaultUri);
   }
 
   /** Set the default filesystem URI in a configuration.
@@ -246,8 +258,15 @@ public abstract class FileSystem extends Configured implements Closeable {
       }
     }
     
+    
     String disableCacheName = String.format("fs.%s.impl.disable.cache", scheme);
-    if (conf.getBoolean(disableCacheName, false)) {
+    // modified by Yin.
+    if (!checkDisableCacheName) {
+      isDisableCacheName = conf.getBoolean(disableCacheName, false);
+      checkDisableCacheName = true;
+    }
+    
+    if (isDisableCacheName) {
       return createFileSystem(uri, conf);
     }
 
