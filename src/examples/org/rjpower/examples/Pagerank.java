@@ -18,7 +18,7 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
 public class Pagerank {
-  public static final int NUMSHARDS = 251;
+  public static final int NUMSHARDS = 250;
   public static final int NUMPAGES = 100* 1000 * 1000;
   public static final double PROPAGATION_FACTOR = 0.8;
   public static class Compare extends WritableComparator {
@@ -181,8 +181,8 @@ public class Pagerank {
           w.targetPages[k] = rand.nextInt(siteSizes.get(targetSite));
         }
 
-        graphWriters[j % NUMSHARDS].append(new LongWritable(i << 32 | j), w);
-        rankWriters[j % NUMSHARDS].append(new LongWritable(i << 32 | j),
+        graphWriters[j % NUMSHARDS].append(new LongWritable((long)i << 32 | j), w);
+        rankWriters[j % NUMSHARDS].append(new LongWritable((long)i << 32 | j),
             new DoubleWritable(PROPAGATION_FACTOR / totalSize));
       }
 
@@ -212,13 +212,13 @@ public class Pagerank {
       job.setOutputKeyClass(LongWritable.class);
       job.setOutputValueClass(DoubleWritable.class);
       //job.setOutputKeyComparatorClass(Compare.class);
-      job.setNumReduceTasks(1);
+      job.setNumReduceTasks(100);
       //job.set("tmpjars", "guava-13.0.1.jar");
       
       // FileInputFormat.setInputPaths(job, new Path(/pr/));
       FileOutputFormat.setOutputPath(job, new Path("rank_out/"));
       
-      //buildGraph(job);
+      buildGraph(job);
       //buildRanks(job);
       FileSystem fs = FileSystem.get(job);
       fs.delete(new Path("rank_out/"), true);
