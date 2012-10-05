@@ -181,8 +181,8 @@ public class Pagerank {
           w.targetPages[k] = rand.nextInt(siteSizes.get(targetSite));
         }
 
-        graphWriters[j % NUMSHARDS].append(new LongWritable((long)i << 32 | j), w);
-        rankWriters[j % NUMSHARDS].append(new LongWritable((long)i << 32 | j),
+        graphWriters[i % NUMSHARDS].append(new LongWritable((long)i << 32 | j), w);
+        rankWriters[i % NUMSHARDS].append(new LongWritable((long)i << 32 | j),
             new DoubleWritable(PROPAGATION_FACTOR / totalSize));
       }
 
