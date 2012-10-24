@@ -9,13 +9,13 @@
 # export JAVA_HOME=/usr/lib/j2sdk1.5-sun
 
 # Extra Java CLASSPATH elements.  Optional.
-# export HADOOP_CLASSPATH=
+export HADOOP_CLASSPATH=/home/liyinhgqw/hadoop/lib/hadoop-lzo-0.4.15.jar
 
 # The maximum amount of heap to use, in MB. Default is 1000.
-# export HADOOP_HEAPSIZE=2000
+export HADOOP_HEAPSIZE=2048
 
 # Extra Java runtime options.  Empty by default.
-# export HADOOP_OPTS=-server
+export 'HADOOP_OPTS=-server -XX:+UseConcMarkSweepGC'
 
 # Command specific options appended to HADOOP_OPTS when specified
 export HADOOP_NAMENODE_OPTS="-Dcom.sun.management.jmxremote $HADOOP_NAMENODE_OPTS"
